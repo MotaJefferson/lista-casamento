@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
+import { createClient } from '@/lib/supabase/client' // Importando cliente navegador
 import type { Gift } from '@/lib/types/database'
 
 export default function GiftManagement() {
@@ -38,6 +39,7 @@ export default function GiftManagement() {
   })
   const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
+  const supabase = createClient() // Inicializa Supabase no cliente
 
   useEffect(() => {
     fetchGifts()
@@ -122,7 +124,6 @@ export default function GiftManagement() {
         description: 'Presente deletado',
       })
 
-      // Remove from local state immediately
       setGifts(gifts.filter(g => g.id !== id))
       fetchGifts()
     } catch (error) {
@@ -156,6 +157,60 @@ export default function GiftManagement() {
       style: 'currency',
       currency: 'BRL',
     }).format(price)
+  }
+
+  // Nova função de upload direto para o Supabase
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validação de Tamanho (Limite de 6MB para exemplo, Supabase aguenta até 50MB)
+    const MAX_SIZE_MB = 6
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast({
+            title: 'Arquivo muito grande',
+            description: `A imagem deve ter no máximo ${MAX_SIZE_MB}MB.`,
+            variant: 'destructive',
+        })
+        // Limpa o input
+        e.target.value = ''
+        return
+    }
+
+    setUploading(true)
+    try {
+        // Gera nome único
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        
+        // Upload direto (Bypassing Vercel API limit)
+        const { error: uploadError } = await supabase.storage
+            .from('gifts')
+            .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        // Pega URL pública
+        const { data: urlData } = supabase.storage
+            .from('gifts')
+            .getPublicUrl(fileName)
+
+        setFormData({ ...formData, image_url: urlData.publicUrl })
+        
+        toast({
+            title: 'Sucesso',
+            description: 'Imagem enviada com sucesso',
+        })
+    } catch (error: any) {
+        console.error('[v0] Upload error:', error)
+        toast({
+            title: 'Erro no Upload',
+            description: error.message || 'Falha ao enviar imagem',
+            variant: 'destructive',
+        })
+    } finally {
+        setUploading(false)
+    }
   }
 
   return (
@@ -273,58 +328,23 @@ export default function GiftManagement() {
                 onChange={(e) =>
                   setFormData({ ...formData, image_url: e.target.value })
                 }
-                placeholder="URL da imagem ou faça upload"
+                placeholder="URL da imagem ou faça upload abaixo"
               />
             </div>
 
             <div>
-              <Label htmlFor="image_upload">Ou fazer upload de imagem</Label>
+              <Label htmlFor="image_upload">Upload de Imagem (Máx 6MB)</Label>
               <Input
                 id="image_upload"
                 type="file"
                 accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-
-                  setUploading(true)
-                  try {
-                    const uploadFormData = new FormData()
-                    uploadFormData.append('file', file)
-
-                    const response = await fetch('/api/upload', {
-                      method: 'POST',
-                      body: uploadFormData,
-                    })
-
-                    if (!response.ok) {
-                      const errorData = await response.json().catch(() => ({}))
-                      throw new Error(errorData.message || errorData.error || 'Upload failed')
-                    }
-
-                    const data = await response.json()
-                    setFormData({ ...formData, image_url: data.url })
-                    toast({
-                      title: 'Sucesso',
-                      description: 'Imagem enviada com sucesso',
-                    })
-                  } catch (error: any) {
-                    console.error('[v0] Upload error:', error)
-                    const errorMessage = error?.message || 'Erro ao fazer upload da imagem'
-                    toast({
-                      title: 'Erro',
-                      description: errorMessage,
-                      variant: 'destructive',
-                    })
-                  } finally {
-                    setUploading(false)
-                  }
-                }}
+                onChange={handleFileUpload}
                 disabled={uploading}
               />
               {uploading && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Enviando imagem...
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Enviando imagem para o servidor...
                 </p>
               )}
             </div>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
+import { createClient } from '@/lib/supabase/client'
 import type { SiteConfig } from '@/lib/types/database'
 
 export default function Configuration() {
@@ -14,7 +15,10 @@ export default function Configuration() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [newAttraction, setNewAttraction] = useState({ time: '', title: '', description: '' })
+  
   const { toast } = useToast()
+  const supabase = createClient()
 
   useEffect(() => {
     fetchConfig()
@@ -62,6 +66,70 @@ export default function Configuration() {
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'main_page_photos' | 'hero_images' = 'main_page_photos') => {
+    const file = e.target.files?.[0]
+    if (!file || !config) return
+
+    // Validação de tamanho (6MB)
+    const MAX_SIZE_MB = 6
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast({
+            title: 'Arquivo muito grande',
+            description: `A foto deve ter no máximo ${MAX_SIZE_MB}MB.`,
+            variant: 'destructive',
+        })
+        e.target.value = ''
+        return
+    }
+
+    setUploadingPhoto(true)
+    try {
+        const fileExt = file.name.split('.').pop()
+        const prefix = targetField === 'hero_images' ? 'hero-' : ''
+        const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+            .from('gifts')
+            .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: urlData } = supabase.storage
+            .from('gifts')
+            .getPublicUrl(fileName)
+
+        const currentPhotos = config[targetField] || []
+        
+        // Atualiza o estado correto dependendo do campo alvo
+        if (targetField === 'hero_images') {
+            setConfig({
+                ...config,
+                hero_images: [...(currentPhotos as string[]), urlData.publicUrl],
+            })
+        } else {
+            setConfig({
+                ...config,
+                main_page_photos: [...(currentPhotos as string[]), urlData.publicUrl],
+            })
+        }
+        
+        toast({
+            title: 'Sucesso',
+            description: 'Foto adicionada com sucesso',
+        })
+    } catch (error: any) {
+        console.error('[v0] Upload error:', error)
+        toast({
+            title: 'Erro',
+            description: error.message || 'Erro ao fazer upload da foto',
+            variant: 'destructive',
+        })
+    } finally {
+        setUploadingPhoto(false)
+        e.target.value = ''
     }
   }
 
@@ -217,6 +285,104 @@ export default function Configuration() {
           </div>
         </div>
 
+        {/* Hero Images (Carrossel de Fundo) */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">Imagens de Fundo (Topo do Site)</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="hero_upload">Adicionar Imagem de Fundo</Label>
+              <Input
+                id="hero_upload"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handlePhotoUpload(e, 'hero_images')}
+                disabled={uploadingPhoto}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {config.hero_images?.map((photo, index) => (
+                <div key={index} className="relative group">
+                  <img src={photo} alt="Hero" className="w-full h-24 object-cover rounded" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newImages = config.hero_images?.filter((_, i) => i !== index) || []
+                      setConfig({ ...config, hero_images: newImages })
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Atrações */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">Atrações e Cronograma</h3>
+          <div className="space-y-4 mb-4 p-4 border rounded-lg">
+            <h4 className="font-medium text-sm">Adicionar Nova Atração</h4>
+            <div className="grid grid-cols-2 gap-2">
+                <Input 
+                    placeholder="Horário (ex: 22:00)" 
+                    value={newAttraction.time} 
+                    onChange={e => setNewAttraction({...newAttraction, time: e.target.value})}
+                />
+                <Input 
+                    placeholder="Título (ex: Banda X)" 
+                    value={newAttraction.title} 
+                    onChange={e => setNewAttraction({...newAttraction, title: e.target.value})}
+                />
+                <Input 
+                    className="col-span-2"
+                    placeholder="Descrição (opcional)" 
+                    value={newAttraction.description} 
+                    onChange={e => setNewAttraction({...newAttraction, description: e.target.value})}
+                />
+            </div>
+            <Button 
+                type="button" 
+                size="sm" 
+                onClick={() => {
+                    if(!newAttraction.title) return;
+                    const attraction = { ...newAttraction, id: Date.now().toString() }
+                    setConfig({
+                        ...config,
+                        attractions: [...(config.attractions || []), attraction]
+                    })
+                    setNewAttraction({ time: '', title: '', description: '' })
+                }}
+            >
+                <Plus className="w-4 h-4 mr-2" /> Adicionar
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {config.attractions?.map((attr, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                    <div>
+                        <span className="font-bold text-primary mr-2">{attr.time}</span>
+                        <span className="font-semibold">{attr.title}</span>
+                        {attr.description && <p className="text-xs text-muted-foreground">{attr.description}</p>}
+                    </div>
+                    <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => {
+                            const newAttrs = config.attractions?.filter((_, i) => i !== index) || []
+                            setConfig({ ...config, attractions: newAttrs })
+                        }}
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
+                </div>
+            ))}
+          </div>
+        </div>
+
         {/* Payment Info */}
         <div>
           <h3 className="text-lg font-bold mb-4">Informações de Pagamento</h3>
@@ -303,9 +469,9 @@ export default function Configuration() {
           </div>
         </div>
 
-        {/* Main Page Photos */}
+        {/* Main Page Photos (Galeria Inferior) */}
         <div>
-          <h3 className="text-lg font-bold mb-4">Fotos da Página Principal</h3>
+          <h3 className="text-lg font-bold mb-4">Fotos da Galeria (Fim da Página)</h3>
           <div className="space-y-4">
             <div>
               <Label htmlFor="photo_upload">Adicionar Foto</Label>
@@ -313,54 +479,9 @@ export default function Configuration() {
                 id="photo_upload"
                 type="file"
                 accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-
-                  setUploadingPhoto(true)
-                  try {
-                    const uploadFormData = new FormData()
-                    uploadFormData.append('file', file)
-
-                    const response = await fetch('/api/upload', {
-                      method: 'POST',
-                      body: uploadFormData,
-                    })
-
-                    if (!response.ok) {
-                      const errorData = await response.json().catch(() => ({}))
-                      throw new Error(errorData.message || errorData.error || 'Upload failed')
-                    }
-
-                    const data = await response.json()
-                    const currentPhotos = config.main_page_photos || []
-                    setConfig({
-                      ...config,
-                      main_page_photos: [...currentPhotos, data.url],
-                    })
-                    toast({
-                      title: 'Sucesso',
-                      description: 'Foto adicionada com sucesso',
-                    })
-                  } catch (error: any) {
-                    console.error('[v0] Upload error:', error)
-                    const errorMessage = error?.message || 'Erro ao fazer upload da foto'
-                    toast({
-                      title: 'Erro',
-                      description: errorMessage,
-                      variant: 'destructive',
-                    })
-                  } finally {
-                    setUploadingPhoto(false)
-                  }
-                }}
+                onChange={(e) => handlePhotoUpload(e, 'main_page_photos')}
                 disabled={uploadingPhoto}
               />
-              {uploadingPhoto && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Enviando foto...
-                </p>
-              )}
             </div>
 
             {config.main_page_photos && config.main_page_photos.length > 0 && (

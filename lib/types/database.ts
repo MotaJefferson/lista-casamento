@@ -53,3 +53,26 @@ export interface SiteConfig {
   footer_text: string | null;
   updated_at: string;
 }
+
+export interface Attraction {
+  id: string;
+  title: string;
+  time: string;
+  description: string;
+}
+
+export interface SiteConfig {
+  id: number;
+  couple_name: string | null;
+  wedding_date: string | null;
+  // ... mantenha os outros campos existentes ...
+  venue_name: string | null;
+  venue_address: string | null;
+  venue_latitude: number | null;
+  venue_longitude: number | null;
+  // ...
+  hero_images: string[] | null; // NOVO
+  attractions: Attraction[] | null; // NOVO
+  // ...
+  updated_at: string;
+}
