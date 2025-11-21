@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Roboto } from 'next/font/google' // Adicione Roboto aqui se estiver usando
+import { Geist, Geist_Mono, Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-// Configuração otimizada das fontes
 const geist = Geist({ 
   subsets: ["latin"],
-  display: 'swap', // Garante que o texto apareça rápido
+  display: 'swap',
   variable: '--font-sans',
 });
 
@@ -16,7 +15,6 @@ const geistMono = Geist_Mono({
   variable: '--font-mono',
 });
 
-// Se você estiver usando Roboto em algum lugar específico (como mapas), configure assim:
 const roboto = Roboto({
   weight: ['400', '500', '700'],
   subsets: ['latin'],
@@ -27,7 +25,12 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: 'Nosso Casamento',
   description: 'Confirme sua presença e veja nossa lista de presentes',
-  // ... (resto dos metadados mantidos)
+  icons: {
+    // Aponta explicitamente para o SVG que você já tem
+    icon: '/icon.svg', 
+    shortcut: '/icon.svg',
+    apple: '/apple-icon.png',
+  },
 }
 
 export default function RootLayout({
