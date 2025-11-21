@@ -1,60 +1,69 @@
 import { createClient } from '@/lib/supabase/server'
-import crypto from 'crypto'
+import { MercadoPagoConfig, Payment } from 'mercadopago'
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const body = await request.json()
+    
+    // O Mercado Pago pode enviar os dados na query string ou no body
+    // Geralmente vem no body para notifications
+    const url = new URL(request.url)
+    const topic = url.searchParams.get('topic') || url.searchParams.get('type')
+    const id = url.searchParams.get('id') || url.searchParams.get('data.id')
 
-    console.log('[v0] Webhook received:', JSON.stringify(body, null, 2))
+    let paymentId = id
+    let type = topic
 
-    // Always return 200/201 to acknowledge receipt
-    // MercadoPago will retry if we don't respond correctly
+    // Se não veio na URL, tenta ler do corpo
+    if (!paymentId) {
+        const body = await request.json().catch(() => ({}))
+        paymentId = body?.data?.id || body?.id
+        type = body?.type || body?.topic
+    }
 
-    // Handle different webhook types
-    if (body.type === 'payment') {
-      const paymentId = body.data.id
-
-      // Verify webhook signature (if using Webhook verification)
-      // const xSignature = request.headers.get('x-signature')
-      // const xRequestId = request.headers.get('x-request-id')
-      // Verify signature logic here
-
-      // Get payment details from MercadoPago
-      const { data: config } = await supabase
-        .from('site_config')
-        .select('mercadopago_access_token')
-        .eq('id', 1)
-        .single()
-
-      if (!config?.mercadopago_access_token) {
-        throw new Error('MercadoPago not configured')
-      }
-
-      const paymentResponse = await fetch(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${config.mercadopago_access_token}`,
-          },
-        }
-      )
-
-      if (!paymentResponse.ok) {
-        throw new Error('Failed to fetch payment details')
-      }
-
-      const payment = await paymentResponse.json()
-
-      const externalReference = payment.external_reference
-
-      if (!externalReference) {
-        console.error('[v0] No external_reference in payment:', payment)
+    // Se ainda não tiver ID ou não for pagamento, apenas responde 200
+    if (!paymentId || type !== 'payment') {
         return Response.json({ received: true }, { status: 200 })
-      }
+    }
 
-      // Update purchase based on payment status
-      const statusMap: Record<string, 'approved' | 'pending' | 'rejected'> = {
+    console.log(`[v0] Webhook processing payment: ${paymentId}`)
+
+    // 1. Buscar credenciais
+    const { data: config } = await supabase
+      .from('site_config')
+      .select('mercadopago_access_token')
+      .eq('id', 1)
+      .single()
+
+    if (!config?.mercadopago_access_token) {
+      console.error('MercadoPago token missing')
+      return Response.json({ received: true }, { status: 200 })
+    }
+
+    // 2. Inicializar SDK
+    const client = new MercadoPagoConfig({ 
+        accessToken: config.mercadopago_access_token 
+    });
+    
+    const paymentClient = new Payment(client);
+
+    // 3. Consultar o pagamento no Mercado Pago
+    const payment = await paymentClient.get({ id: paymentId })
+
+    if (!payment) {
+        console.error('Payment not found in Mercado Pago')
+        return Response.json({ received: true }, { status: 200 })
+    }
+
+    const externalReference = payment.external_reference
+
+    if (!externalReference) {
+        console.log('No external reference, ignoring')
+        return Response.json({ received: true }, { status: 200 })
+    }
+
+    // 4. Mapear status
+    const statusMap: Record<string, 'approved' | 'pending' | 'rejected'> = {
         'approved': 'approved',
         'pending': 'pending',
         'in_process': 'pending',
@@ -62,66 +71,40 @@ export async function POST(request: Request) {
         'cancelled': 'rejected',
         'refunded': 'rejected',
         'charged_back': 'rejected',
-      }
+    }
 
-      const purchaseStatus = statusMap[payment.status] || 'pending'
+    const purchaseStatus = statusMap[payment.status!] || 'pending'
 
-      // Update purchase
-      const { data: purchase, error: purchaseError } = await supabase
+    // 5. Atualizar banco de dados
+    const { error: updateError } = await supabase
         .from('purchases')
-        .select('*')
-        .eq('id', externalReference)
-        .single()
-
-      if (purchaseError || !purchase) {
-        console.error('[v0] Purchase not found:', externalReference, purchaseError)
-        // Still return 200 to acknowledge webhook
-        return Response.json({ received: true }, { status: 200 })
-      }
-
-      // Update purchase status
-      const updateData: any = {
-        payment_id: paymentId.toString(),
-        payment_status: purchaseStatus,
-        updated_at: new Date().toISOString(),
-      }
-
-      const { error: updateError } = await supabase
-        .from('purchases')
-        .update(updateData)
+        .update({
+            payment_id: paymentId.toString(),
+            payment_status: purchaseStatus,
+            updated_at: new Date().toISOString(),
+        })
         .eq('id', externalReference)
 
-      if (updateError) {
-        console.error('[v0] Error updating purchase:', updateError)
-      } else {
-        console.log(`[v0] Payment ${payment.status} for purchase:`, externalReference)
-      }
+    if (updateError) {
+        console.error('Error updating purchase:', updateError)
+    } else {
+        console.log(`Purchase ${externalReference} updated to ${purchaseStatus}`)
+    }
 
-      // Send confirmation email only for approved payments
-      if (payment.status === 'approved') {
-        try {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/email/send-purchase-confirmation`, {
+    // 6. Enviar e-mail se aprovado
+    if (payment.status === 'approved') {
+        // Chama a rota de email internamente para não duplicar lógica
+        fetch(`${process.env.NEXT_PUBLIC_URL}/api/email/send-purchase-confirmation`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ purchaseId: externalReference }),
-          })
-        } catch (emailError) {
-          console.error('[v0] Failed to send confirmation email:', emailError)
-          // Don't fail the webhook if email fails
-        }
-      }
+        }).catch(err => console.error('Failed to trigger email:', err))
     }
 
-    // Always return 200/201 to acknowledge receipt
-    // MercadoPago will retry if we return error status
     return Response.json({ received: true }, { status: 200 })
+
   } catch (error) {
     console.error('[v0] Webhook error:', error)
-    // Still return 200 to prevent MercadoPago from retrying
-    // Log the error for manual investigation
-    return Response.json(
-      { received: true, error: 'Error processing webhook' },
-      { status: 200 }
-    )
+    return Response.json({ received: true }, { status: 200 })
   }
 }
