@@ -144,6 +144,8 @@ export interface SiteConfig {
   ceremony_time: string | null;
   reception_time: string | null;
   dress_code: string | null;
+  guests_arrival_time: string | null;
+  couple_arrival_time: string | null;
 
   // Pagamento e Sistema
   mercadopago_access_token: string | null;

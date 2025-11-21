@@ -33,6 +33,11 @@ export default function Configuration() {
       setConfig(data)
     } catch (error) {
       console.error('[v0] Error fetching config:', error)
+      toast({
+        title: 'Erro',
+        description: 'Erro ao buscar configurações',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -40,6 +45,7 @@ export default function Configuration() {
 
   const handleSave = async () => {
     if (!config) return
+
     setSaving(true)
     try {
       const response = await fetch('/api/config', {
@@ -47,10 +53,19 @@ export default function Configuration() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       })
-      if (!response.ok) throw new Error('Failed')
-      toast({ title: 'Sucesso', description: 'Configurações salvas' })
+
+      if (!response.ok) throw new Error('Failed to save config')
+
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações salvas',
+      })
     } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao salvar', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: 'Erro ao salvar configurações',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -60,8 +75,13 @@ export default function Configuration() {
     const file = e.target.files?.[0]
     if (!file || !config) return
 
+    // Validação de tamanho (6MB)
     if (file.size > 6 * 1024 * 1024) {
-        toast({ title: 'Arquivo muito grande', description: 'Máximo 6MB', variant: 'destructive' })
+        toast({
+            title: 'Arquivo muito grande',
+            description: `A foto deve ter no máximo 6MB.`,
+            variant: 'destructive',
+        })
         e.target.value = ''
         return
     }
@@ -70,25 +90,58 @@ export default function Configuration() {
     try {
         const fileExt = file.name.split('.').pop()
         const prefix = targetField === 'hero_images' ? 'hero-' : ''
-        const fileName = `${prefix}${Date.now()}.${fileExt}`
+        const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
         
-        const { error: uploadError } = await supabase.storage.from('gifts').upload(fileName, file)
+        const { error: uploadError } = await supabase.storage
+            .from('gifts')
+            .upload(fileName, file)
+
         if (uploadError) throw uploadError
 
-        const { data: urlData } = supabase.storage.from('gifts').getPublicUrl(fileName)
-        const currentList = config[targetField] || []
+        const { data: urlData } = supabase.storage
+            .from('gifts')
+            .getPublicUrl(fileName)
+
+        const currentPhotos = config[targetField] || []
         
-        setConfig({ ...config, [targetField]: [...currentList, urlData.publicUrl] })
-        toast({ title: 'Sucesso', description: 'Foto adicionada' })
+        // Atualiza o estado correto dependendo do campo alvo
+        if (targetField === 'hero_images') {
+            setConfig({
+                ...config,
+                hero_images: [...(currentPhotos as string[]), urlData.publicUrl],
+            })
+        } else {
+            setConfig({
+                ...config,
+                main_page_photos: [...(currentPhotos as string[]), urlData.publicUrl],
+            })
+        }
+        
+        toast({
+            title: 'Sucesso',
+            description: 'Foto adicionada com sucesso',
+        })
     } catch (error: any) {
-        toast({ title: 'Erro', description: 'Falha no upload', variant: 'destructive' })
+        console.error('[v0] Upload error:', error)
+        toast({
+            title: 'Erro',
+            description: error.message || 'Erro ao fazer upload da foto',
+            variant: 'destructive',
+        })
     } finally {
         setUploadingPhoto(false)
         e.target.value = ''
     }
   }
 
-  if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
   if (!config) return null
 
   return (
@@ -139,23 +192,28 @@ export default function Configuration() {
                     <Label>Adicionar Imagem</Label>
                     <Input type="file" accept="image/*" onChange={e => handlePhotoUpload(e, 'hero_images')} disabled={uploadingPhoto} />
                 </div>
+                <div>
+                    <Label>Tempo de Transição do Carrossel (ms)</Label>
+                    <Input 
+                        type="number" 
+                        placeholder="5000" 
+                        value={config.hero_interval || ''} 
+                        onChange={e => setConfig({...config, hero_interval: parseInt(e.target.value)})} 
+                    />
+                    <p className="text-xs text-muted-foreground">5000ms = 5 segundos. Padrão é 5000.</p>
+                </div>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                     {config.hero_images?.map((photo, i) => (
                         <div key={i} className="relative group aspect-video">
-                            <img src={photo} className="w-full h-full object-cover rounded bg-muted" />
-                            <button onClick={() => setConfig({...config, hero_images: config.hero_images!.filter((_, idx) => idx !== i)})} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3 h-3" /></button>
+                            <img src={photo} className="w-full h-full object-cover rounded bg-muted" alt={`Hero ${i}`} />
+                            <button 
+                                onClick={() => setConfig({...config, hero_images: config.hero_images!.filter((_, idx) => idx !== i)})} 
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
                         </div>
                     ))}
-                </div>
-                <div>
-                    <Label>Tempo de Transição do Carrossel (ms)</Label>
-                    <Input
-                        type="number"
-                        placeholder="5000"
-                        value={config.hero_interval || ''}
-                        onChange={e => setConfig({ ...config, hero_interval: parseInt(e.target.value) })}
-                    />
-                    <p className="text-xs text-muted-foreground">5000ms = 5 segundos. Padrão é 5000.</p>
                 </div>
             </Card>
         </TabsContent>
@@ -166,8 +224,25 @@ export default function Configuration() {
                 <h3 className="font-bold">Dados do Evento</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><Label>Data</Label><Input type="date" value={config.wedding_date || ''} onChange={e => setConfig({...config, wedding_date: e.target.value})} /></div>
-                    <div><Label>Horário Cerimônia</Label><Input value={config.ceremony_time || ''} onChange={e => setConfig({...config, ceremony_time: e.target.value})} /></div>
-                    <div><Label>Horário Recepção</Label><Input value={config.reception_time || ''} onChange={e => setConfig({...config, reception_time: e.target.value})} /></div>
+                    
+                    {/* Novos Horários */}
+                    <div>
+                        <Label>Horário: Chegada dos Convidados</Label>
+                        <Input 
+                            placeholder="Ex: 16:30" 
+                            value={config.guests_arrival_time || ''} 
+                            onChange={e => setConfig({...config, guests_arrival_time: e.target.value})} 
+                        />
+                    </div>
+                    <div>
+                        <Label>Horário: Chegada dos Noivos</Label>
+                        <Input 
+                            placeholder="Ex: 17:00" 
+                            value={config.couple_arrival_time || ''} 
+                            onChange={e => setConfig({...config, couple_arrival_time: e.target.value})} 
+                        />
+                    </div>
+                    
                     <div><Label>Traje</Label><Input value={config.dress_code || ''} onChange={e => setConfig({...config, dress_code: e.target.value})} /></div>
                 </div>
                 <div><Label>Nome do Local</Label><Input value={config.venue_name || ''} onChange={e => setConfig({...config, venue_name: e.target.value})} /></div>
@@ -246,6 +321,49 @@ export default function Configuration() {
                 </div>
             </Card>
         </TabsContent>
+
+        {/* Main Page Photos (Galeria Inferior) */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">Fotos da Galeria (Fim da Página)</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="photo_upload">Adicionar Foto</Label>
+              <Input
+                id="photo_upload"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handlePhotoUpload(e, 'main_page_photos')}
+                disabled={uploadingPhoto}
+              />
+            </div>
+
+            {config.main_page_photos && config.main_page_photos.length > 0 && (
+              <div className="grid grid-cols-3 gap-4">
+                {config.main_page_photos.map((photo, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newPhotos = config.main_page_photos?.filter(
+                          (_, i) => i !== index
+                        ) || []
+                        setConfig({ ...config, main_page_photos: newPhotos })
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </Tabs>
     </div>
   )

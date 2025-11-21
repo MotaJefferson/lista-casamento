@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getTransporter } from '@/lib/email/transporter'
+import { emailTemplates } from '@/lib/email/templates'
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +11,7 @@ export async function POST(request: Request) {
 
     if (!name) return Response.json({ message: 'Nome é obrigatório' }, { status: 400 })
 
+    // 1. Salvar no banco
     const { error } = await supabase.from('rsvp_guests').insert({
         name,
         email,
@@ -19,6 +22,26 @@ export async function POST(request: Request) {
 
     if (error) throw error
 
+    // 2. Enviar e-mail se o usuário informou
+    if (email) {
+        // Buscar configurações do site para preencher o email
+        const { data: config } = await supabase.from('site_config').select('*').single()
+        
+        if (config) {
+            const transporter = await getTransporter()
+            if (transporter) {
+                const template = emailTemplates.rsvpConfirmation(name, parseInt(guests_count), config)
+                
+                await transporter.sendMail({
+                    from: process.env.SMTP_USER,
+                    to: email,
+                    subject: template.subject,
+                    html: template.html,
+                })
+            }
+        }
+    }
+
     return Response.json({ success: true })
   } catch (error) {
     console.error('RSVP Error:', error)
@@ -27,12 +50,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-    // Rota para o admin listar (protegida)
     try {
         const supabase = await createClient()
-        // TODO: Adicionar verificação de admin aqui se necessário, 
-        // mas a política RLS já deve proteger se o usuário não estiver logado
-        
         const { data, error } = await supabase.from('rsvp_guests').select('*').order('created_at', { ascending: false })
         if (error) throw error
         return Response.json(data)
