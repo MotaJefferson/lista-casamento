@@ -115,6 +115,16 @@ export interface GuestSession {
   created_at: string;
 }
 
+export interface RSVPGuest {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  guests_count: number;
+  message: string | null;
+  created_at: string;
+}
+
 export interface SiteConfig {
   id: number;
   // Configs Gerais
@@ -147,6 +157,7 @@ export interface SiteConfig {
   // Imagens
   main_page_photos: string[] | null;
   hero_images: string[] | null;
+  hero_interval: number | null;
   
   // Dados Complexos
   attractions: Attraction[] | null;

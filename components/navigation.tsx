@@ -12,7 +12,7 @@ export default function Navigation() {
   const [siteName, setSiteName] = useState('Casamento')
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
+    const handleScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handleScroll)
     
     const fetchName = async () => {
@@ -25,49 +25,56 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Efeito de vidro e transição suave
+  // Lógica: Transparente no topo, Vidro Escuro/Claro ao rolar
+  // Texto: Sempre branco no topo (sobre a foto), cor do tema ao rolar
   const navClasses = scrolled 
-    ? 'bg-background/70 backdrop-blur-md border-b border-border/40 shadow-sm' 
-    : 'bg-transparent'
+    ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm py-3' 
+    : 'bg-transparent py-6'
+
+  const textClasses = scrolled ? 'text-foreground' : 'text-white drop-shadow-md'
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${navClasses}`}>
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className={`font-bold text-xl tracking-tight transition-colors ${scrolled ? 'text-foreground' : 'text-foreground md:text-white md:drop-shadow-md'}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${navClasses}`}>
+      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <Link href="/" className={`font-bold text-2xl tracking-tighter transition-colors ${textClasses}`}>
           {siteName}
         </Link>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           {['Detalhes', 'Local'].map((item) => (
-             <a key={item} href={`/#${item.toLowerCase() === 'detalhes' ? 'details' : 'location'}`} className={`text-sm font-medium transition-colors hover:text-primary ${scrolled ? 'text-foreground' : 'text-white/90 hover:text-white'}`}>
+             <a key={item} href={`/#${item.toLowerCase() === 'detalhes' ? 'details' : 'location'}`} className={`text-sm font-medium uppercase tracking-widest transition-colors hover:opacity-70 ${textClasses}`}>
                {item}
              </a>
           ))}
-          <Link href="/gifts" className={`text-sm font-medium transition-colors hover:text-primary ${scrolled ? 'text-foreground' : 'text-white/90 hover:text-white'}`}>
+          <Link href="/gifts" className={`text-sm font-medium uppercase tracking-widest transition-colors hover:opacity-70 ${textClasses}`}>
             Presentes
           </Link>
           <Link href="/guest/purchases">
-            <Button variant={scrolled ? "outline" : "secondary"} size="sm" className={!scrolled ? "bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm" : ""}>
+            <Button 
+                variant={scrolled ? "default" : "secondary"} 
+                size="sm" 
+                className={`rounded-full px-6 ${!scrolled ? "bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-md border" : ""}`}
+            >
               Meus Presentes
             </Button>
           </Link>
         </div>
 
-        <button className={`md:hidden ${scrolled ? 'text-foreground' : 'text-foreground md:text-white'}`} onClick={() => setIsOpen(!isOpen)}>
+        <button className={`md:hidden ${textClasses}`} onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X /> : <Menu />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl absolute w-full">
-          <div className="px-4 py-6 space-y-4 flex flex-col">
-            <a href="/#details" className="text-sm font-medium" onClick={() => setIsOpen(false)}>Detalhes</a>
-            <a href="/#location" className="text-sm font-medium" onClick={() => setIsOpen(false)}>Local</a>
-            <Link href="/gifts" className="text-sm font-medium" onClick={() => setIsOpen(false)}>Presentes</Link>
-            <Link href="/guest/purchases" onClick={() => setIsOpen(false)}>
-              <Button size="sm" className="w-full">Meus Presentes</Button>
+        <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border animate-fade-in-up">
+          <div className="px-6 py-8 space-y-6 flex flex-col items-center text-center">
+            <a href="/#details" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Detalhes</a>
+            <a href="/#location" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Local</a>
+            <Link href="/gifts" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Presentes</Link>
+            <Link href="/guest/purchases" onClick={() => setIsOpen(false)} className="w-full">
+              <Button className="w-full rounded-full">Meus Presentes</Button>
             </Link>
           </div>
         </div>

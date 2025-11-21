@@ -22,10 +22,16 @@ export default function HomePage() {
       <Navigation />
       <main>
         <HeroSection config={config} />
-        {/* Espaçamento removido entre seções para fluxo contínuo */}
         <CTASection config={config} /> 
+        
+        {/* REMOVIDO QUALQUER ESPAÇAMENTO EXTRA AQUI */}
+        
         <WeddingDetails config={config} />
+        
+        {/* REMOVIDO QUALQUER ESPAÇAMENTO EXTRA AQUI */}
+        
         <LocationSection config={config} />
+        
         {config?.main_page_photos && config.main_page_photos.length > 0 && (
           <PhotoGallery photos={config.main_page_photos} />
         )}

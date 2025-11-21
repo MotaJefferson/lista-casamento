@@ -10,6 +10,7 @@ import GiftManagement from '@/components/admin/gift-management'
 import PurchaseTracking from '@/components/admin/purchase-tracking'
 import Analytics from '@/components/admin/analytics'
 import Configuration from '@/components/admin/configuration'
+import RSVPList from '@/components/admin/rsvp-list'
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -94,6 +95,7 @@ export default function AdminDashboardPage() {
         <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="rsvp">Lista de Presença</TabsTrigger>
             <TabsTrigger value="gifts">Presentes</TabsTrigger>
             <TabsTrigger value="purchases">Compras</TabsTrigger>
             <TabsTrigger value="config">Configuração</TabsTrigger>
@@ -101,6 +103,10 @@ export default function AdminDashboardPage() {
 
           <TabsContent value="analytics">
             <Analytics />
+          </TabsContent>
+
+          <TabsContent value="rsvp">
+            <RSVPList />
           </TabsContent>
 
           <TabsContent value="gifts">

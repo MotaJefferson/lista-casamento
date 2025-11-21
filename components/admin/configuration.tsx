@@ -147,6 +147,16 @@ export default function Configuration() {
                         </div>
                     ))}
                 </div>
+                <div>
+                    <Label>Tempo de Transição do Carrossel (ms)</Label>
+                    <Input
+                        type="number"
+                        placeholder="5000"
+                        value={config.hero_interval || ''}
+                        onChange={e => setConfig({ ...config, hero_interval: parseInt(e.target.value) })}
+                    />
+                    <p className="text-xs text-muted-foreground">5000ms = 5 segundos. Padrão é 5000.</p>
+                </div>
             </Card>
         </TabsContent>
 
