@@ -68,14 +68,14 @@ export default function Navigation() {
                 <Button 
                     variant={showSolidBackground ? "default" : "secondary"} 
                     size="sm" 
-                    className={`rounded-full px-5 text-xs font-bold gap-2 ${!showSolidBackground ? "bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-md border" : ""}`}
+                    className={`h-10 px-6 text-xs font-bold gap-2 rounded-full transition-all ${!showSolidBackground ? "bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-md border" : ""}`}
                 >
-                    <Gift className="w-3 h-3" />
+                    <Gift className="w-4 h-4" />
                     Lista de Presentes
                 </Button>
             </Link>
             
-            {/* Envolvemos o Modal de RSVP em um div para manter o estilo do botão consistente */}
+            {/* Envolvemos o Modal de RSVP para aplicar estilo consistente */}
             <div className={!showSolidBackground ? "[&>button]:bg-white/20 [&>button]:hover:bg-white/30 [&>button]:text-white [&>button]:border-white/30 [&>button]:backdrop-blur-md [&>button]:border" : ""}>
                <RSVPModal />
             </div>
