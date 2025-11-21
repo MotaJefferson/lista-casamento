@@ -7,46 +7,28 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const { email, otp } = await request.json()
 
-    if (!email || !otp) {
-      return Response.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+    // Busca configurações personalizadas
+    const { data: config } = await supabase.from('site_config').select('email_otp_subject, email_otp_content').single()
 
     const transporter = await getTransporter()
-    if (!transporter) {
-      console.warn('[v0] Email service not configured, skipping OTP email')
-      return Response.json({ success: true, skipped: true })
-    }
+    if (!transporter) return Response.json({ success: true, skipped: true })
 
-    const template = emailTemplates.otpCode(email, otp)
+    const template = emailTemplates.otpCode(
+        email, 
+        otp, 
+        config?.email_otp_subject || undefined, 
+        config?.email_otp_content || undefined
+    )
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: process.env.SMTP_USER,
       to: email,
       subject: template.subject,
       html: template.html,
     })
 
-    // Log email
-    await supabase.from('email_logs').insert({
-      recipient_email: email,
-      subject: template.subject,
-      email_type: 'otp',
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-    })
-
-    console.log('[v0] OTP email sent:', info.messageId)
-
     return Response.json({ success: true })
   } catch (error) {
-    console.error('[v0] Send OTP email error:', error)
-
-    return Response.json(
-      { message: 'Error sending email' },
-      { status: 500 }
-    )
+    return Response.json({ message: 'Error sending email' }, { status: 500 })
   }
 }

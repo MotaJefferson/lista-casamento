@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0.005 240); /* Cinza azulado muito sutil */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -40,7 +40,7 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.12 0.01 240); /* Fundo dark moderno */
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -120,6 +120,25 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Fundo com gradiente sutil em vez de branco chapado */
+    @apply bg-[linear-gradient(to_bottom,var(--background),var(--secondary))] text-foreground min-h-screen;
   }
 }
+
+/* Animações */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-slow {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.10); }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out; }
+.animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
+.animate-pulse-slow { animation: pulse-slow 15s infinite ease-in-out; }
