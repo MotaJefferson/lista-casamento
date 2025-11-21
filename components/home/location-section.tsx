@@ -30,10 +30,11 @@ export default function LocationSection({ config }: LocationSectionProps) {
     if (app === 'waze') {
       window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank')
     } else {
-      window.open(`http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`, '_blank')
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank')
     }
   }
 
+  // URL corrigida e segura (HTTPS)
   const mapUrl = `https://maps.google.com/maps?q=${config.venue_latitude},${config.venue_longitude}&hl=pt&z=15&output=embed`
 
   return (
@@ -64,7 +65,7 @@ export default function LocationSection({ config }: LocationSectionProps) {
           </div>
 
           {/* Mapa Grande */}
-          <div className="order-1 lg:order-2 h-[400px] lg:h-[500px] w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-card">
+          <div className="order-1 lg:order-2 h-[400px] lg:h-[500px] w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-card bg-muted">
             <iframe
               src={mapUrl}
               width="100%"
@@ -72,6 +73,7 @@ export default function LocationSection({ config }: LocationSectionProps) {
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
               className="grayscale hover:grayscale-0 transition-all duration-500"
             />
           </div>
