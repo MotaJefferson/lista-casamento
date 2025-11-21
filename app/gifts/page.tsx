@@ -54,10 +54,14 @@ export default function GiftsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-3 text-balance">Lista de Presentes</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
+      {/* AJUSTE AQUI: 
+         Alterado 'py-12' para 'pt-32 pb-12'. 
+         Isso empurra o conteúdo para baixo, livrando o cabeçalho fixo.
+      */}
+      <main className="max-w-6xl mx-auto px-4 pt-32 pb-12">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold mb-3 text-balance text-primary">Lista de Presentes</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Escolha um presente que nos ajude a começar nossa nova vida juntos
           </p>
         </div>
