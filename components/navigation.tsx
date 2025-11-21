@@ -2,14 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Menu, X, Gift, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import RSVPModal from './home/rsvp-modal'
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [siteName, setSiteName] = useState('Casamento')
+  const pathname = usePathname()
+  
+  // Verifica se é a página inicial para aplicar a lógica de transparência
+  const isHomePage = pathname === '/'
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -25,13 +31,18 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Lógica: Transparente no topo, Vidro Escuro/Claro ao rolar
-  // Texto: Sempre branco no topo (sobre a foto), cor do tema ao rolar
-  const navClasses = scrolled 
-    ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm py-3' 
+  // Lógica de Estilo:
+  // Se NÃO for Home, força estilo "scrolled" (fundo sólido, texto escuro) desde o início.
+  // Se for Home, usa a lógica de scroll.
+  const forceSolid = !isHomePage
+  const showSolidBackground = forceSolid || scrolled
+
+  const navClasses = showSolidBackground
+    ? 'bg-background/90 backdrop-blur-md border-b border-border/40 shadow-sm py-3' 
     : 'bg-transparent py-6'
 
-  const textClasses = scrolled ? 'text-foreground' : 'text-white drop-shadow-md'
+  const textClasses = showSolidBackground ? 'text-foreground' : 'text-white drop-shadow-md'
+  const linkHoverClasses = showSolidBackground ? 'hover:text-primary' : 'hover:text-white/80'
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${navClasses}`}>
@@ -41,41 +52,59 @@ export default function Navigation() {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-8">
-          {['Detalhes', 'Local'].map((item) => (
-             <a key={item} href={`/#${item.toLowerCase() === 'detalhes' ? 'details' : 'location'}`} className={`text-sm font-medium uppercase tracking-widest transition-colors hover:opacity-70 ${textClasses}`}>
-               {item}
-             </a>
-          ))}
-          <Link href="/gifts" className={`text-sm font-medium uppercase tracking-widest transition-colors hover:opacity-70 ${textClasses}`}>
-            Presentes
+        <div className="hidden lg:flex items-center gap-8">
+          <a href="/#details" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
+            Detalhes
+          </a>
+          <a href="/#location" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
+            Local
+          </a>
+          <Link href="/guest/purchases" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
+            Meus Presentes
           </Link>
-          <Link href="/guest/purchases">
-            <Button 
-                variant={scrolled ? "default" : "secondary"} 
-                size="sm" 
-                className={`rounded-full px-6 ${!scrolled ? "bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-md border" : ""}`}
-            >
-              Meus Presentes
-            </Button>
-          </Link>
+          
+          <div className="flex gap-3 ml-4">
+            <Link href="/gifts">
+                <Button 
+                    variant={showSolidBackground ? "default" : "secondary"} 
+                    size="sm" 
+                    className={`rounded-full px-5 text-xs font-bold gap-2 ${!showSolidBackground ? "bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-md border" : ""}`}
+                >
+                    <Gift className="w-3 h-3" />
+                    Lista de Presentes
+                </Button>
+            </Link>
+            
+            {/* Envolvemos o Modal de RSVP em um div para manter o estilo do botão consistente */}
+            <div className={!showSolidBackground ? "[&>button]:bg-white/20 [&>button]:hover:bg-white/30 [&>button]:text-white [&>button]:border-white/30 [&>button]:backdrop-blur-md [&>button]:border" : ""}>
+               <RSVPModal />
+            </div>
+          </div>
         </div>
 
-        <button className={`md:hidden ${textClasses}`} onClick={() => setIsOpen(!isOpen)}>
+        <button className={`lg:hidden ${textClasses}`} onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X /> : <Menu />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border animate-fade-in-up">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border animate-fade-in-up shadow-2xl">
           <div className="px-6 py-8 space-y-6 flex flex-col items-center text-center">
-            <a href="/#details" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Detalhes</a>
-            <a href="/#location" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Local</a>
-            <Link href="/gifts" className="text-lg font-medium" onClick={() => setIsOpen(false)}>Presentes</Link>
-            <Link href="/guest/purchases" onClick={() => setIsOpen(false)} className="w-full">
-              <Button className="w-full rounded-full">Meus Presentes</Button>
+            <a href="/#details" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Detalhes</a>
+            <a href="/#location" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Local</a>
+            <Link href="/guest/purchases" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Meus Presentes</Link>
+            
+            <div className="w-full h-px bg-border my-2" />
+            
+            <Link href="/gifts" onClick={() => setIsOpen(false)} className="w-full">
+              <Button className="w-full rounded-full gap-2">
+                <Gift className="w-4 h-4" /> Lista de Presentes
+              </Button>
             </Link>
+            <div className="w-full flex justify-center">
+                <RSVPModal />
+            </div>
           </div>
         </div>
       )}

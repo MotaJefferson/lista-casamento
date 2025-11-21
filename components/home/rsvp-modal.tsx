@@ -60,8 +60,9 @@ export default function RSVPModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" variant="outline" className="gap-2 text-lg px-8 py-6 rounded-full border-2 hover:bg-background hover:text-foreground transition-all">
-          <Check className="w-5 h-5" />
+        {/* Removemos as classes fixas grandes para que ele herde o estilo do pai na navegação */}
+        <Button className="gap-2 rounded-full font-bold">
+          <Check className="w-4 h-4" />
           Confirmar Presença
         </Button>
       </DialogTrigger>
