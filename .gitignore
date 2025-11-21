@@ -1,0 +1,12 @@
+# Dependências
+node_modules/
+
+# Build do Next.js
+.next/
+
+# Arquivos de ambiente (contém senhas e chaves secretas)
+.env.local
+.env.*.local
+
+# Arquivos de tipo do Next.js
+next-env.d.ts
