@@ -23,7 +23,6 @@ export default function CTASection({ config }: { config: SiteConfig | null }) {
   const text = config?.cta_text || 'Convidamos você a fazer parte do nosso dia especial.'
 
   return (
-    // Removido padding-top excessivo para conectar com o Hero, e adicionado padding-bottom controlado
     <section id="cta-section" className="py-20 bg-background relative overflow-hidden">
       <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
         <h2 className={`text-3xl md:text-5xl font-bold mb-6 text-foreground transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -33,7 +32,6 @@ export default function CTASection({ config }: { config: SiteConfig | null }) {
           {text}
         </p>
         
-        {/* Botões lado a lado */}
         <div className={`flex flex-col sm:flex-row gap-4 justify-center items-center transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           <Link href="/gifts">
             <Button size="lg" className="gap-2 text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 bg-primary hover:bg-primary/90">
@@ -42,7 +40,11 @@ export default function CTASection({ config }: { config: SiteConfig | null }) {
             </Button>
           </Link>
           
-          <RSVPModal />
+          {/* Botão de RSVP com o mesmo tamanho e efeito */}
+          <RSVPModal 
+            size="lg" 
+            className="text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105" 
+          />
         </div>
       </div>
     </section>

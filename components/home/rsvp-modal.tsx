@@ -15,8 +15,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
-export default function RSVPModal() {
+interface RSVPModalProps {
+  className?: string
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  size?: "default" | "sm" | "lg" | "icon"
+}
+
+export default function RSVPModal({ className, variant = "default", size = "default" }: RSVPModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -60,7 +67,11 @@ export default function RSVPModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="h-10 px-6 gap-2 rounded-full text-xs font-bold transition-all">
+        <Button 
+            size={size} 
+            variant={variant} 
+            className={cn("gap-2", className)}
+        >
           <Check className="w-4 h-4" />
           Confirmar Presença
         </Button>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Gift, Check } from 'lucide-react'
+import { Menu, X, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import RSVPModal from './home/rsvp-modal'
@@ -14,7 +14,6 @@ export default function Navigation() {
   const [siteName, setSiteName] = useState('Casamento')
   const pathname = usePathname()
   
-  // Verifica se é a página inicial para aplicar a lógica de transparência
   const isHomePage = pathname === '/'
 
   useEffect(() => {
@@ -31,9 +30,6 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Lógica de Estilo:
-  // Se NÃO for Home, força estilo "scrolled" (fundo sólido, texto escuro) desde o início.
-  // Se for Home, usa a lógica de scroll.
   const forceSolid = !isHomePage
   const showSolidBackground = forceSolid || scrolled
 
@@ -75,9 +71,12 @@ export default function Navigation() {
                 </Button>
             </Link>
             
-            {/* Envolvemos o Modal de RSVP para aplicar estilo consistente */}
             <div className={!showSolidBackground ? "[&>button]:bg-white/20 [&>button]:hover:bg-white/30 [&>button]:text-white [&>button]:border-white/30 [&>button]:backdrop-blur-md [&>button]:border" : ""}>
-               <RSVPModal />
+               {/* Passamos size="sm" e classes específicas para o cabeçalho */}
+               <RSVPModal 
+                 size="sm" 
+                 className="h-10 px-6 text-xs font-bold rounded-full"
+               />
             </div>
           </div>
         </div>
@@ -103,7 +102,7 @@ export default function Navigation() {
               </Button>
             </Link>
             <div className="w-full flex justify-center">
-                <RSVPModal />
+                <RSVPModal className="w-full rounded-full" />
             </div>
           </div>
         </div>
