@@ -53,24 +53,23 @@ export default function HeroSection({ config }: HeroSectionProps) {
             index === currentImageIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {/* Camada 1: Imagem de Fundo Borrada (Preenche tudo) */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-50"
-            style={{ backgroundImage: `url(${img})` }}
-          />
-          
-          {/* Camada 2: Imagem Principal (Mantém proporção) */}
+          {/* ALTERAÇÃO AQUI:
+             1. Removemos a div de "blur" (borrão) que estava no fundo.
+             2. Mudamos 'object-contain' para 'object-cover'.
+             Isso força a imagem a preencher todo o espaço, cortando as laterais se necessário, 
+             mas eliminando as tarjas pretas.
+          */}
           <img 
             src={img} 
             alt="Background" 
-            className="absolute inset-0 w-full h-full object-contain z-0 animate-pulse-slow"
+            className="absolute inset-0 w-full h-full object-cover z-0 animate-pulse-slow"
             style={{ animationDuration: '20s' }}
           />
         </div>
       ))}
       
-      {/* Overlay Gradiente */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-background z-10" />
+      {/* Overlay Gradiente para garantir leitura do texto */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-background/90 z-10" />
       
       <div className="relative z-20 text-center px-4 max-w-5xl mx-auto flex flex-col items-center justify-center h-full pt-10">
         <h1 className="text-6xl md:text-9xl font-bold mb-12 text-white tracking-tighter animate-fade-in drop-shadow-2xl" style={{ fontFamily: 'var(--font-sans)' }}>
