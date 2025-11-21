@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react' // Adicione Suspense
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,18 +18,16 @@ import { useToast } from '@/hooks/use-toast'
 
 type Step = 'email' | 'otp'
 
-export default function GuestLoginPage() {
+function GuestLoginContent() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    setMounted(true)
     const emailParam = searchParams.get('email')
     if (emailParam) {
       setEmail(emailParam)
@@ -105,106 +103,107 @@ export default function GuestLoginPage() {
     }
   }
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </div>
-    )
-  }
+  return (
+    <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12">
+      <Card className="w-full max-w-md p-8">
+        {step === 'email' ? (
+          <>
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold mb-2">Meus Presentes</h1>
+              <p className="text-muted-foreground">
+                Digite seu email para acessar seu histórico de presentes
+              </p>
+            </div>
 
+            <form onSubmit={handleRequestOTP} className="space-y-4">
+              <div>
+                <Label htmlFor="email" className="mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Enviar Código
+              </Button>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold mb-2">Verificar Código</h1>
+              <p className="text-muted-foreground">
+                Digitamos um código de 6 dígitos para {email}
+              </p>
+            </div>
+
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div>
+                <Label className="mb-4 block">Código OTP</Label>
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={setOtp}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Verificar
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setStep('email')
+                  setOtp('')
+                }}
+              >
+                Voltar
+              </Button>
+            </form>
+          </>
+        )}
+      </Card>
+    </main>
+  )
+}
+
+export default function GuestLoginPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12">
-        <Card className="w-full max-w-md p-8">
-          {step === 'email' ? (
-            <>
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold mb-2">Meus Presentes</h1>
-                <p className="text-muted-foreground">
-                  Digite seu email para acessar seu histórico de presentes
-                </p>
-              </div>
-
-              <form onSubmit={handleRequestOTP} className="space-y-4">
-                <div>
-                  <Label htmlFor="email" className="mb-2 block">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Enviar Código
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold mb-2">Verificar Código</h1>
-                <p className="text-muted-foreground">
-                  Digitamos um código de 6 dígitos para {email}
-                </p>
-              </div>
-
-              <form onSubmit={handleVerifyOTP} className="space-y-4">
-                <div>
-                  <Label className="mb-4 block">Código OTP</Label>
-                  <div className="flex justify-center">
-                    <InputOTP
-                      maxLength={6}
-                      value={otp}
-                      onChange={setOtp}
-                    >
-                      <InputOTPGroup>
-                        <InputOTPSlot index={0} />
-                        <InputOTPSlot index={1} />
-                        <InputOTPSlot index={2} />
-                      </InputOTPGroup>
-                      <InputOTPSeparator />
-                      <InputOTPGroup>
-                        <InputOTPSlot index={3} />
-                        <InputOTPSlot index={4} />
-                        <InputOTPSlot index={5} />
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Verificar
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setStep('email')
-                    setOtp('')
-                  }}
-                >
-                  Voltar
-                </Button>
-              </form>
-            </>
-          )}
-        </Card>
-      </main>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }>
+        <GuestLoginContent />
+      </Suspense>
     </div>
   )
 }

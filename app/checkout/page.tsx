@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import Navigation from '@/components/navigation'
 import type { Purchase, Gift } from '@/lib/types/database'
 
-export default function CheckoutPage() {
+// Componente interno que usa o useSearchParams
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const purchaseId = searchParams.get('purchaseId')
@@ -61,7 +62,6 @@ export default function CheckoutPage() {
         }
         const data = await response.json()
         
-        // Redirect directly to init_point (includes sandbox_init_point for test mode)
         if (data.init_point) {
           window.location.href = data.init_point
         } else {
@@ -69,7 +69,6 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Error creating preference:', error)
-        // Show error to user
         alert('Erro ao iniciar pagamento. Por favor, tente novamente.')
         router.push('/gifts')
       }
@@ -87,64 +86,68 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   if (!purchase || !gift) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p>Compra não encontrada</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p>Compra não encontrada</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Finalizar Pagamento</h1>
+    <main className="max-w-4xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold mb-8">Finalizar Pagamento</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="p-6">
-              <h2 className="font-bold text-lg mb-4">Resumo do Pedido</h2>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Presente</p>
-                  <p className="font-medium">{gift.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valor</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatPrice(gift.price)}
-                  </p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <Card className="p-6">
+            <h2 className="font-bold text-lg mb-4">Resumo do Pedido</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Presente</p>
+                <p className="font-medium">{gift.name}</p>
               </div>
-            </Card>
-          </div>
-
-          {/* Payment Form */}
-          <div className="lg:col-span-2">
-            <Card className="p-6">
-              <h2 className="font-bold text-lg mb-6">Redirecionando para pagamento...</h2>
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Valor</p>
+                <p className="text-2xl font-bold text-primary">
+                  {formatPrice(gift.price)}
+                </p>
               </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
-      </main>
-    </div>
+
+        <div className="lg:col-span-2">
+          <Card className="p-6">
+            <h2 className="font-bold text-lg mb-6">Redirecionando para pagamento...</h2>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          </Card>
+        </div>
+      </div>
+    </main>
   )
 }
 
+// Componente Principal exportado envolvido em Suspense
+export default function CheckoutPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }>
+        <CheckoutContent />
+      </Suspense>
+    </div>
+  )
+}
