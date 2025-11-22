@@ -32,9 +32,8 @@ export default function Footer() {
           {/* About */}
           <div>
             <h3 className="font-bold text-xl mb-4 flex items-center gap-3">
-              {/* Logo GIF no Rodapé */}
               <div className="relative w-8 h-8 overflow-hidden rounded-full bg-muted">
-                 <img src="/logo.gif" alt="Logo" className="w-full h-full object-cover" />
+                 <img src="/favicon.png" alt="Logo" className="w-full h-full object-cover" />
               </div>
               {coupleName}
             </h3>

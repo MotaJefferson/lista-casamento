@@ -45,10 +45,10 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         
         <Link href="/" className="flex items-center gap-3 group">
-            {/* LOGO GIF: Exibido aqui dentro do site */}
+            {/* Alterado de logo.gif para favicon.png */}
             <div className="relative w-10 h-10 overflow-hidden rounded-full border-2 border-white/20 shadow-sm group-hover:scale-105 transition-transform">
                 <img 
-                    src="/logo.gif" 
+                    src="/favicon.png" 
                     alt="Logo" 
                     className="w-full h-full object-cover" 
                 />

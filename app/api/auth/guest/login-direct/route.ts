@@ -9,6 +9,8 @@ export async function POST(request: Request) {
       return Response.json({ message: 'Email obrigatório' }, { status: 400 })
     }
 
+    const normalizedEmail = email.trim().toLowerCase()
+
     // Cria a sessão sem maxAge (Cookie de Sessão - morre ao fechar o navegador)
     const token = Buffer.from(`${email}:${Date.now()}`).toString('base64')
 
