@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 import Navigation from '@/components/navigation'
 import { useToast } from '@/hooks/use-toast'
 
-export default function GuestLoginPage() {
+function GuestLoginContent() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -21,57 +21,81 @@ export default function GuestLoginPage() {
     setLoading(true)
 
     try {
+      // Chama a rota de login direto que já criamos
       const response = await fetch('/api/auth/guest/login-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
 
-      if (!response.ok) throw new Error('Erro ao entrar')
+      const data = await response.json()
 
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao entrar')
+      }
+
+      // Sucesso: Redireciona para a lista de presentes
       router.push('/guest/purchases')
+      
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao entrar. Tente novamente.',
+        description: 'Não foi possível acessar com este e-mail. Tente novamente.',
         variant: 'destructive',
       })
+    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12">
-        <Card className="w-full max-w-md p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Meus Presentes</h1>
-            <p className="text-muted-foreground">
-              Digite seu email para ver seus presentes
-            </p>
+    <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12 px-4">
+      <Card className="w-full max-w-md p-8 shadow-xl border-none bg-white/80 backdrop-blur-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold mb-2 text-primary">Meus Presentes</h1>
+          <p className="text-muted-foreground">
+            Digite seu e-mail para visualizar os presentes que você já comprou.
+          </p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">Seu E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="exemplo@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 text-lg"
+            />
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+          <Button 
+            type="submit" 
+            className="w-full h-12 text-lg font-bold rounded-full transition-transform active:scale-95" 
+            disabled={loading || !email}
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Acessar Meus Presentes'}
+          </Button>
+        </form>
+      </Card>
+    </main>
+  )
+}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Acessar
-            </Button>
-          </form>
-        </Card>
-      </main>
+export default function GuestLoginPage() {
+  return (
+    <div className="min-h-screen bg-background pt-20"> {/* pt-20 para compensar o header fixo */}
+      <Navigation />
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }>
+        <GuestLoginContent />
+      </Suspense>
     </div>
   )
 }
