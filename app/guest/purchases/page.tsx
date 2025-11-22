@@ -46,24 +46,26 @@ export default function GuestPurchasesPage() {
 
     setSubmitting(true)
     try {
-      const response = await fetch('/api/auth/guest/request-otp', {
+      // Chama a nova rota de login direto
+      const response = await fetch('/api/auth/guest/login-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao enviar código')
+        throw new Error('Erro ao entrar')
       }
 
-      router.push(`/guest/login?email=${encodeURIComponent(email)}`)
+      // Recarrega a página para pegar a sessão nova
+      window.location.reload()
+      
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao processar email',
+        description: 'Tente novamente',
         variant: 'destructive',
       })
-    } finally {
       setSubmitting(false)
     }
   }
