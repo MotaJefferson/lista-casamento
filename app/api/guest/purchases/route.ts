@@ -9,28 +9,31 @@ export async function GET() {
       return Response.json({ message: 'Not authenticated' }, { status: 401 })
     }
 
-    // Decodifica o email da sessão
-    const [email] = session.split(':')
-    let decodedEmail = Buffer.from(email, 'base64').toString('utf-8')
+    // CORREÇÃO DA LÓGICA DE DECODIFICAÇÃO:
+    // 1. Decodifica o token completo (que está em base64)
+    const sessionContent = Buffer.from(session, 'base64').toString('utf-8')
     
-    // CORREÇÃO CRÍTICA: Normaliza para minúsculo e remove espaços
-    decodedEmail = decodedEmail.trim().toLowerCase()
+    // 2. O formato é "email:timestamp", então separamos pelo ":"
+    // Pegamos apenas a primeira parte (o email)
+    const emailPart = sessionContent.split(':')[0]
+    
+    // 3. Limpeza final do email
+    const decodedEmail = emailPart.trim().toLowerCase()
+
+    console.log('[v0] Searching purchases for:', decodedEmail) // Log para debug
 
     const supabase = await createClient()
 
-    // Busca compras usando filtro insensível a caixa (ilike ou normalização manual)
-    // Como o Supabase/Postgres é case sensitive por padrão, a melhor prática é garantir
-    // que salvamos e buscamos tudo em minúsculo.
-    
-    // Aqui buscamos usando 'ilike' para ignorar maiúsculas/minúsculas no banco
+    // Busca compras usando filtro insensível a caixa (ilike)
     const { data: purchases, error } = await supabase
       .from('purchases')
       .select('*')
-      .ilike('guest_email', decodedEmail) // Mudou de .eq para .ilike
+      .ilike('guest_email', decodedEmail) 
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
+    // Busca os detalhes dos presentes
     const purchasesWithGifts = await Promise.all(
       (purchases || []).map(async (purchase) => {
         const { data: gift } = await supabase
