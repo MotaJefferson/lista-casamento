@@ -43,8 +43,19 @@ export default function Navigation() {
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${navClasses}`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <Link href="/" className={`font-bold text-2xl tracking-tighter transition-colors ${textClasses}`}>
-          {siteName}
+        
+        <Link href="/" className="flex items-center gap-3 group">
+            {/* LOGO GIF: Exibido aqui dentro do site */}
+            <div className="relative w-10 h-10 overflow-hidden rounded-full border-2 border-white/20 shadow-sm group-hover:scale-105 transition-transform">
+                <img 
+                    src="/logo.gif" 
+                    alt="Logo" 
+                    className="w-full h-full object-cover" 
+                />
+            </div>
+            <span className={`font-bold text-2xl tracking-tighter transition-colors ${textClasses}`}>
+                {siteName}
+            </span>
         </Link>
 
         {/* Desktop Menu */}
@@ -55,8 +66,7 @@ export default function Navigation() {
           <a href="/#location" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
             Local
           </a>
-          {/* Link alterado para /guest/login para forçar entrada do email */}
-          <Link href="/guest/login" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
+          <Link href="/guest/purchases" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
             Meus Presentes
           </Link>
           
@@ -92,8 +102,7 @@ export default function Navigation() {
           <div className="px-6 py-8 space-y-6 flex flex-col items-center text-center">
             <a href="/#details" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Detalhes</a>
             <a href="/#location" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Local</a>
-            {/* Link alterado para /guest/login */}
-            <Link href="/guest/login" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Meus Presentes</Link>
+            <Link href="/guest/purchases" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Meus Presentes</Link>
             
             <div className="w-full h-px bg-border my-2" />
             

@@ -26,9 +26,9 @@ export const metadata: Metadata = {
   title: 'Nosso Casamento',
   description: 'Confirme sua presença e veja nossa lista de presentes',
   icons: {
-    // Aponta explicitamente para o SVG que você já tem
-    icon: '/icon.svg', 
-    shortcut: '/icon.svg',
+    // Define PNG para o navegador (estático)
+    icon: '/favicon.png', 
+    shortcut: '/favicon.png',
     apple: '/apple-icon.png',
   },
 }
