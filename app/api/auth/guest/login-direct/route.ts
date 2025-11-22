@@ -9,8 +9,7 @@ export async function POST(request: Request) {
       return Response.json({ message: 'Email obrigatório' }, { status: 400 })
     }
 
-    // Cria a sessão diretamente (sem OTP)
-    // Formato: email:timestamp
+    // Cria a sessão sem maxAge (Cookie de Sessão - morre ao fechar o navegador)
     const token = Buffer.from(`${email}:${Date.now()}`).toString('base64')
 
     const cookieStore = await cookies()
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 dias
+      // Removido maxAge: 60 * 60 * 24 * 30
     })
 
     return Response.json({ success: true })

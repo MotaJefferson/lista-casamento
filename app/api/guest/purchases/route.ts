@@ -18,7 +18,7 @@ export async function GET() {
 
     const supabase = await createClient()
 
-    // Get purchases for this email
+    // Get ALL purchases for this email (no status filter)
     const { data: purchases, error } = await supabase
       .from('purchases')
       .select('*')

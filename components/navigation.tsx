@@ -55,7 +55,8 @@ export default function Navigation() {
           <a href="/#location" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
             Local
           </a>
-          <Link href="/guest/purchases" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
+          {/* Link alterado para /guest/login para forçar entrada do email */}
+          <Link href="/guest/login" className={`text-xs font-bold uppercase tracking-widest transition-colors ${textClasses} ${linkHoverClasses}`}>
             Meus Presentes
           </Link>
           
@@ -72,7 +73,6 @@ export default function Navigation() {
             </Link>
             
             <div className={!showSolidBackground ? "[&>button]:bg-white/20 [&>button]:hover:bg-white/30 [&>button]:text-white [&>button]:border-white/30 [&>button]:backdrop-blur-md [&>button]:border" : ""}>
-               {/* Passamos size="sm" e classes específicas para o cabeçalho */}
                <RSVPModal 
                  size="sm" 
                  className="h-10 px-6 text-xs font-bold rounded-full"
@@ -92,7 +92,8 @@ export default function Navigation() {
           <div className="px-6 py-8 space-y-6 flex flex-col items-center text-center">
             <a href="/#details" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Detalhes</a>
             <a href="/#location" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Local</a>
-            <Link href="/guest/purchases" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Meus Presentes</Link>
+            {/* Link alterado para /guest/login */}
+            <Link href="/guest/login" className="text-sm font-bold uppercase tracking-widest" onClick={() => setIsOpen(false)}>Meus Presentes</Link>
             
             <div className="w-full h-px bg-border my-2" />
             

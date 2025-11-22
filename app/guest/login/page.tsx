@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,12 +16,19 @@ function GuestLoginContent() {
   const router = useRouter()
   const { toast } = useToast()
 
+  // Limpa a sessão anterior ao entrar na tela (Força novo login)
+  useEffect(() => {
+    const logout = async () => {
+      await fetch('/api/auth/guest/logout', { method: 'POST' })
+    }
+    logout()
+  }, [])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      // Chama a rota de login direto que já criamos
       const response = await fetch('/api/auth/guest/login-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +61,7 @@ function GuestLoginContent() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold mb-2 text-primary">Meus Presentes</h1>
           <p className="text-muted-foreground">
-            Digite seu e-mail para visualizar os presentes que você já comprou.
+            Digite seu e-mail para visualizar os presentes que você já comprou (aprovados ou pendentes).
           </p>
         </div>
 
@@ -87,7 +94,7 @@ function GuestLoginContent() {
 
 export default function GuestLoginPage() {
   return (
-    <div className="min-h-screen bg-background pt-20"> {/* pt-20 para compensar o header fixo */}
+    <div className="min-h-screen bg-background pt-20">
       <Navigation />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-[60vh]">
