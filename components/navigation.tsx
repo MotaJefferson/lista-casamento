@@ -11,7 +11,7 @@ import RSVPModal from './home/rsvp-modal'
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [siteName, setSiteName] = useState('Casamento')
+  const [siteName, setSiteName] = useState('Casamento') // Fallback inicial
   const pathname = usePathname()
   
   const isHomePage = pathname === '/'
@@ -22,8 +22,9 @@ export default function Navigation() {
     
     const fetchName = async () => {
         const supabase = createClient()
-        const { data } = await supabase.from('site_config').select('site_name').single()
-        if (data?.site_name) setSiteName(data.site_name)
+        // Alterado para buscar o NOME DO CASAL (couple_name)
+        const { data } = await supabase.from('site_config').select('couple_name').single()
+        if (data?.couple_name) setSiteName(data.couple_name)
     }
     fetchName()
 
@@ -44,13 +45,13 @@ export default function Navigation() {
     <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${navClasses}`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         
-        <Link href="/" className="flex items-center gap-3 group">
-            {/* Alterado de logo.gif para favicon.png */}
-            <div className="relative w-10 h-10 overflow-hidden rounded-full border-2 border-white/20 shadow-sm group-hover:scale-105 transition-transform">
+        <Link href="/" className="flex items-center gap-2 group">
+            {/* Ícone limpo, sem borda ou fundo */}
+            <div className="relative w-10 h-10 group-hover:scale-110 transition-transform">
                 <img 
                     src="/favicon.png" 
                     alt="Logo" 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-contain" 
                 />
             </div>
             <span className={`font-bold text-2xl tracking-tighter transition-colors ${textClasses}`}>
