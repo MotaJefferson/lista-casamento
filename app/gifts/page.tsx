@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import GiftGrid from '@/components/gifts/gift-grid'
-import GiftFilters from '@/components/gifts/gift-filters'
+import GiftFilters, { SortOption } from '@/components/gifts/gift-filters'
 import PurchaseModal from '@/components/gifts/purchase-modal'
 import type { Gift } from '@/lib/types/database'
 
@@ -13,6 +13,7 @@ export default function GiftsPage() {
   const [filteredGifts, setFilteredGifts] = useState<Gift[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortOption>('price_asc') // Padrão: Menor Preço
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
   const [showModal, setShowModal] = useState(false)
 
@@ -33,17 +34,28 @@ export default function GiftsPage() {
   }, [])
 
   useEffect(() => {
-    let filtered = gifts
+    // 1. Filtrar
+    let result = gifts.filter(g =>
+      g.name.toLowerCase().includes(search.toLowerCase()) ||
+      g.description?.toLowerCase().includes(search.toLowerCase())
+    )
 
-    if (search) {
-      filtered = filtered.filter(g =>
-        g.name.toLowerCase().includes(search.toLowerCase()) ||
-        g.description?.toLowerCase().includes(search.toLowerCase())
-      )
-    }
+    // 2. Ordenar
+    result.sort((a, b) => {
+      switch (sort) {
+        case 'price_asc':
+          return a.price - b.price
+        case 'price_desc':
+          return b.price - a.price
+        case 'name_asc':
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
+    })
 
-    setFilteredGifts(filtered)
-  }, [gifts, search])
+    setFilteredGifts([...result])
+  }, [gifts, search, sort])
 
   const handlePurchaseClick = (gift: Gift) => {
     setSelectedGift(gift)
@@ -54,10 +66,6 @@ export default function GiftsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      {/* AJUSTE AQUI: 
-         Alterado 'py-12' para 'pt-32 pb-12'. 
-         Isso empurra o conteúdo para baixo, livrando o cabeçalho fixo.
-      */}
       <main className="max-w-6xl mx-auto px-4 pt-32 pb-12">
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold mb-3 text-balance text-primary">Lista de Presentes</h1>
@@ -69,6 +77,8 @@ export default function GiftsPage() {
         <GiftFilters
           search={search}
           onSearchChange={setSearch}
+          sort={sort}
+          onSortChange={setSort}
         />
 
         {loading ? (
