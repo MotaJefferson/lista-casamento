@@ -23,7 +23,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: 'Nosso Casamento',
+  title: 'Camila e Jefferson - Nosso Casamento',
   description: 'Confirme sua presença e veja nossa lista de presentes',
   icons: {
     // Define PNG para o navegador (estático)
