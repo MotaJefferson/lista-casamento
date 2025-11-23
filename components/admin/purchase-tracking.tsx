@@ -34,7 +34,7 @@ export default function PurchaseTracking() {
       const data = await response.json()
       setPurchases(data)
     } catch (error) {
-      console.error('[v0] Error fetching purchases:', error)
+      console.error('Error fetching purchases:', error)
     } finally {
       setLoading(false)
     }
@@ -85,9 +85,7 @@ export default function PurchaseTracking() {
         description: 'Compra deletada',
       })
 
-      // Remove from local state immediately
       setPurchases(purchases.filter(p => p.id !== id))
-      fetchPurchases()
     } catch (error) {
       toast({
         title: 'Erro',
@@ -113,6 +111,7 @@ export default function PurchaseTracking() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Nome</TableHead> {/* Nova Coluna */}
                 <TableHead>Email</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -124,6 +123,9 @@ export default function PurchaseTracking() {
               {purchases.map((purchase) => (
                 <TableRow key={purchase.id}>
                   <TableCell className="font-medium">
+                    {purchase.guest_name || 'Não informado'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
                     {purchase.guest_email}
                   </TableCell>
                   <TableCell>{formatPrice(purchase.amount)}</TableCell>
