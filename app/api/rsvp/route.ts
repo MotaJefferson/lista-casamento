@@ -11,25 +11,41 @@ export async function POST(request: Request) {
 
     if (!name) return Response.json({ message: 'Nome é obrigatório' }, { status: 400 })
 
-    // Salvar
+    // 1. Salvar no Banco
     const { error } = await supabase.from('rsvp_guests').insert({
         name, email, phone, guests_count: parseInt(guests_count), message
     })
 
     if (error) throw error
 
-    // Enviar E-mail
-    if (email) {
-        const { data: config } = await supabase.from('site_config').select('*').single()
-        if (config) {
-            const transporter = await getTransporter()
-            if (transporter) {
-                const template = emailTemplates.rsvpConfirmation(name, parseInt(guests_count), config)
+    // 2. Carregar Configurações
+    const { data: config } = await supabase.from('site_config').select('*').single()
+    
+    if (config) {
+        const transporter = await getTransporter()
+        
+        if (transporter) {
+            // A. Enviar Confirmação para o Convidado (se tiver e-mail)
+            if (email) {
+                const guestTemplate = emailTemplates.rsvpConfirmation(name, parseInt(guests_count), config)
                 await transporter.sendMail({
                     from: process.env.SMTP_USER,
                     to: email,
-                    subject: template.subject,
-                    html: template.html,
+                    subject: guestTemplate.subject,
+                    html: guestTemplate.html,
+                })
+            }
+
+            // B. Enviar Notificação para o Admin (VOCÊ)
+            if (config.notification_email) {
+                const adminTemplate = emailTemplates.rsvpNotificationAdmin({
+                    name, email, phone, guests_count, message
+                })
+                await transporter.sendMail({
+                    from: process.env.SMTP_USER,
+                    to: config.notification_email,
+                    subject: adminTemplate.subject,
+                    html: adminTemplate.html,
                 })
             }
         }
@@ -37,7 +53,8 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true })
   } catch (error) {
-    return Response.json({ message: 'Erro' }, { status: 500 })
+    console.error('RSVP Error:', error)
+    return Response.json({ message: 'Erro ao confirmar presença' }, { status: 500 })
   }
 }
 

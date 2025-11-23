@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2, Plus, Save, LayoutDashboard, CalendarHeart, Mail, CreditCard, Camera, Wine } from 'lucide-react'
+import { Loader2, Trash2, Plus, Save, LayoutDashboard, CalendarHeart, Mail, CreditCard, Camera, Wine, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
