@@ -199,6 +199,16 @@ export default function Configuration() {
                         </div>
                     </div>
 
+                    {/* Comidas */}
+                    <div className="pt-4 border-t">
+                        <h3 className="text-lg font-bold mb-4 border-b pb-2 flex items-center gap-2">Card de Comidas</h3>
+                        <div className="space-y-3">
+                            <div><Label>Título</Label><Input value={config.food_title || ''} onChange={e => setConfig({...config, food_title: e.target.value})} /></div>
+                            <div><Label>Texto Destaque</Label><Textarea placeholder="Ex: Buffet completo..." value={config.food_top_text || ''} onChange={e => setConfig({...config, food_top_text: e.target.value})} /></div>
+                            <div><Label>Texto Rodapé</Label><Input placeholder="Ex: Opções veganas..." value={config.food_bottom_text || ''} onChange={e => setConfig({...config, food_bottom_text: e.target.value})} /></div>
+                        </div>
+                    </div>
+
                     {/* Atrações */}
                     <div>
                         <h3 className="text-lg font-bold mb-4 border-b pb-2">Atrações</h3>

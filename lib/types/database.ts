@@ -76,6 +76,11 @@ export interface SiteConfig {
   drinks_top_text: string | null;
   drinks_bottom_text: string | null;
 
+  // Comidas (NOVO)
+  food_title: string | null;
+  food_top_text: string | null;
+  food_bottom_text: string | null;
+
   // Sistema
   mercadopago_access_token: string | null;
   notification_email: string | null;
