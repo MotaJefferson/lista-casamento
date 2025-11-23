@@ -151,13 +151,25 @@ export default function Configuration() {
             {/* ABA EVENTO */}
             <TabsContent value="event" className="m-0">
                 <Card className="p-6 space-y-6">
+                    {/* Seção de Data e Horários */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><Label>Data</Label><Input type="date" value={config.wedding_date || ''} onChange={e => setConfig({...config, wedding_date: e.target.value})} /></div>
-                        <div><Label>Traje</Label><Input value={config.dress_code || ''} onChange={e => setConfig({...config, dress_code: e.target.value})} /></div>
+                        <div><Label>Traje (Texto Principal)</Label><Input value={config.dress_code || ''} onChange={e => setConfig({...config, dress_code: e.target.value})} /></div>
                         <div><Label>Chegada Convidados</Label><Input value={config.guests_arrival_time || ''} onChange={e => setConfig({...config, guests_arrival_time: e.target.value})} /></div>
                         <div><Label>Entrada Noivos</Label><Input value={config.couple_arrival_time || ''} onChange={e => setConfig({...config, couple_arrival_time: e.target.value})} /></div>
                     </div>
+
+                    {/* NOVO: Texto do Card de Horários */}
+                    <div>
+                        <Label>Texto do Card "Horários"</Label>
+                        <Input 
+                            placeholder="Ex: Não se atrase para vivermos esse momento!" 
+                            value={config.schedule_description || ''} 
+                            onChange={e => setConfig({...config, schedule_description: e.target.value})} 
+                        />
+                    </div>
                     
+                    {/* Seção Local (Mantenha igual) */}
                     <div className="pt-4 border-t">
                         <h4 className="font-bold mb-2">Local</h4>
                         <div className="grid grid-cols-1 gap-2">
@@ -170,16 +182,30 @@ export default function Configuration() {
                         </div>
                     </div>
 
+                    {/* ATUALIZADO: Seção Card de Bebidas */}
                     <div className="pt-4 border-t">
-                        <h4 className="font-bold mb-2">Card de Bebidas (Novo)</h4>
+                        <h4 className="font-bold mb-2">Card de Bebidas</h4>
                         <div className="space-y-2">
-                            <Label>Título</Label>
+                            <Label>Título do Card</Label>
                             <Input value={config.drinks_title || ''} onChange={e => setConfig({...config, drinks_title: e.target.value})} />
-                            <Label>Descrição</Label>
-                            <Textarea value={config.drinks_description || ''} onChange={e => setConfig({...config, drinks_description: e.target.value})} />
+                            
+                            <Label>Texto Principal (Destaque)</Label>
+                            <Textarea 
+                                placeholder="Ex: Open bar completo..." 
+                                value={config.drinks_top_text || ''} 
+                                onChange={e => setConfig({...config, drinks_top_text: e.target.value})} 
+                            />
+                            
+                            <Label>Texto Inferior (Menor)</Label>
+                            <Input 
+                                placeholder="Ex: Beba com moderação" 
+                                value={config.drinks_bottom_text || ''} 
+                                onChange={e => setConfig({...config, drinks_bottom_text: e.target.value})} 
+                            />
                         </div>
                     </div>
 
+                    {/* Seção Atrações (Mantenha igual) */}
                     <div className="pt-4 border-t">
                         <h4 className="font-bold mb-2">Atrações</h4>
                         <div className="flex gap-2 mb-2">

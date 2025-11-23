@@ -136,6 +136,9 @@ export interface SiteConfig {
   drinks_description: string | null; // NOVO
   email_rsvp_subject: string | null; // NOVO
   email_rsvp_content: string | null; // NOVO
+  schedule_description: string | null; // NOVO
+  drinks_top_text: string | null; // NOVO
+  drinks_bottom_text: string | null; // NOVO
 
   // CTA Home
   cta_title: string | null;
