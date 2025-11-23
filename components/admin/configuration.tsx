@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2, Plus, Save, LayoutDashboard, CalendarHeart, Mail, CreditCard, Camera } from 'lucide-react'
+import { Loader2, Trash2, Plus, Save, LayoutDashboard, CalendarHeart, Mail, CreditCard, Camera, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,7 +61,6 @@ export default function Configuration() {
     }
   }
 
-  // ... (Mantenha a função handlePhotoUpload igual ao anterior) ...
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'main_page_photos' | 'hero_images') => {
     const file = e.target.files?.[0]
     if (!file || !config) return
@@ -205,7 +204,7 @@ export default function Configuration() {
                 </Card>
             </TabsContent>
 
-            {/* ABA GALERIA (Corrigido: Fotos agora ficam separadas) */}
+            {/* ABA GALERIA */}
             <TabsContent value="gallery" className="m-0">
                 <Card className="p-6 space-y-8">
                     <div>
