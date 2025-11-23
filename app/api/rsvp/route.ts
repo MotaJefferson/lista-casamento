@@ -11,27 +11,20 @@ export async function POST(request: Request) {
 
     if (!name) return Response.json({ message: 'Nome é obrigatório' }, { status: 400 })
 
-    // 1. Salvar no banco
+    // Salvar
     const { error } = await supabase.from('rsvp_guests').insert({
-        name,
-        email,
-        phone,
-        guests_count: parseInt(guests_count),
-        message
+        name, email, phone, guests_count: parseInt(guests_count), message
     })
 
     if (error) throw error
 
-    // 2. Enviar e-mail se o usuário informou
+    // Enviar E-mail
     if (email) {
-        // Buscar configurações do site para preencher o email
         const { data: config } = await supabase.from('site_config').select('*').single()
-        
         if (config) {
             const transporter = await getTransporter()
             if (transporter) {
                 const template = emailTemplates.rsvpConfirmation(name, parseInt(guests_count), config)
-                
                 await transporter.sendMail({
                     from: process.env.SMTP_USER,
                     to: email,
@@ -44,8 +37,7 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true })
   } catch (error) {
-    console.error('RSVP Error:', error)
-    return Response.json({ message: 'Erro ao confirmar presença' }, { status: 500 })
+    return Response.json({ message: 'Erro' }, { status: 500 })
   }
 }
 

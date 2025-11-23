@@ -132,6 +132,11 @@ export interface SiteConfig {
   couple_name: string | null;
   wedding_date: string | null;
   
+  drinks_title: string | null; // NOVO
+  drinks_description: string | null; // NOVO
+  email_rsvp_subject: string | null; // NOVO
+  email_rsvp_content: string | null; // NOVO
+
   // CTA Home
   cta_title: string | null;
   cta_text: string | null;
