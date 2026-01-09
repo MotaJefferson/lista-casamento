@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2, CheckCircle, XCircle, RotateCcw } from 'lucide-react'
+import { Loader2, Trash2, CheckCircle, XCircle, RotateCcw, RefreshCw } from 'lucide-react' // Adicionado RefreshCw
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -22,6 +22,7 @@ interface PurchaseWithGift extends Purchase {
 export default function PurchaseTracking() {
   const [purchases, setPurchases] = useState<PurchaseWithGift[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncingId, setSyncingId] = useState<string | null>(null) // Estado para loading individual
   const { toast } = useToast()
 
   useEffect(() => {
@@ -32,7 +33,6 @@ export default function PurchaseTracking() {
     try {
       const response = await fetch('/api/purchases')
       const data = await response.json()
-      // Ordenar por data (mais recente primeiro)
       const sorted = Array.isArray(data) ? data.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ) : []
@@ -46,6 +46,46 @@ export default function PurchaseTracking() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCheckStatus = async (id: string) => {
+    setSyncingId(id)
+    try {
+        const response = await fetch(`/api/purchases/${id}/check-status`, {
+            method: 'POST',
+        })
+        
+        const data = await response.json()
+
+        if (!response.ok) throw new Error(data.message || 'Erro ao verificar')
+
+        if (data.found) {
+            toast({
+                title: 'Sincronizado',
+                description: `Status atual: ${data.new_status === 'approved' ? 'Aprovado' : data.new_status}`,
+                variant: data.new_status === 'approved' ? 'default' : 'secondary'
+            })
+            
+            // Atualiza lista local
+            setPurchases(prev => prev.map(p => 
+                p.id === id ? { ...p, payment_status: data.new_status, payment_id: data.payment_id } : p
+            ))
+        } else {
+            toast({
+                title: 'Aviso',
+                description: 'Pagamento não localizado no Mercado Pago',
+                variant: 'destructive',
+            })
+        }
+    } catch (error) {
+        toast({
+            title: 'Erro',
+            description: 'Falha ao conectar com Mercado Pago',
+            variant: 'destructive',
+        })
+    } finally {
+        setSyncingId(null)
     }
   }
 
@@ -79,6 +119,7 @@ export default function PurchaseTracking() {
     }
   }
 
+  // ... (manter funções handleUpdateStatus e handleDelete do passo anterior)
   const handleUpdateStatus = async (id: string, newStatus: 'approved' | 'rejected' | 'pending') => {
     const actionText = newStatus === 'approved' ? 'aprovar' : newStatus === 'rejected' ? 'rejeitar' : 'resetar'
     if (!confirm(`Tem certeza que deseja ${actionText} esta compra?`)) return
@@ -97,7 +138,6 @@ export default function PurchaseTracking() {
             description: `Status atualizado para ${newStatus}`,
         })
 
-        // Atualiza a lista localmente
         setPurchases(purchases.map(p => 
             p.id === id ? { ...p, payment_status: newStatus } : p
         ))
@@ -190,14 +230,32 @@ export default function PurchaseTracking() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                        {/* Ações para Pendente: Aprovar ou Rejeitar */}
+                        {/* Botão de Sincronização (Sempre visível se não for aprovado, ou sempre para check) */}
+                        {purchase.payment_status !== 'approved' && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleCheckStatus(purchase.id)}
+                                disabled={syncingId === purchase.id}
+                                title="Consultar no Mercado Pago"
+                                className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                            >
+                                {syncingId === purchase.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                )}
+                            </Button>
+                        )}
+
+                        {/* Ações Manuais (Aprovar/Rejeitar) */}
                         {purchase.payment_status === 'pending' && (
                             <>
                                 <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleUpdateStatus(purchase.id, 'approved')}
-                                    title="Aprovar Pagamento Manualmente"
+                                    title="Aprovar Manualmente"
                                     className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
                                     <CheckCircle className="h-4 w-4" />
@@ -206,7 +264,7 @@ export default function PurchaseTracking() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleUpdateStatus(purchase.id, 'rejected')}
-                                    title="Rejeitar Pagamento"
+                                    title="Rejeitar Manualmente"
                                     className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                 >
                                     <XCircle className="h-4 w-4" />
@@ -214,34 +272,30 @@ export default function PurchaseTracking() {
                             </>
                         )}
 
-                        {/* Ações para Rejeitado: Tentar Aprovar ou Resetar */}
                         {purchase.payment_status === 'rejected' && (
-                            <Button
+                             <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleUpdateStatus(purchase.id, 'pending')}
-                                title="Voltar para Pendente"
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Resetar para Pendente"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-gray-600 hover:bg-gray-100"
                             >
                                 <RotateCcw className="h-4 w-4" />
                             </Button>
                         )}
-                        
-                        {/* Ação de Delete (Disponível se não for Aprovado) */}
+
+                        {/* Delete */}
                         {purchase.payment_status !== 'approved' && (
                             <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleDelete(purchase.id)}
-                                title="Deletar Registro"
+                                title="Deletar"
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         )}
-                        
-                        {/* Se estiver aprovado, não mostra botões de ação para evitar acidentes, 
-                            mas se quiser adicionar "Estornar" seria aqui. */}
                     </div>
                   </TableCell>
                 </TableRow>
