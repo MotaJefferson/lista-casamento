@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -32,9 +32,18 @@ export default function PurchaseTracking() {
     try {
       const response = await fetch('/api/purchases')
       const data = await response.json()
-      setPurchases(data)
+      // Ordenar por data (mais recente primeiro)
+      const sorted = Array.isArray(data) ? data.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ) : []
+      setPurchases(sorted)
     } catch (error) {
       console.error('Error fetching purchases:', error)
+      toast({
+        title: 'Erro',
+        description: 'Falha ao carregar compras',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -70,6 +79,37 @@ export default function PurchaseTracking() {
     }
   }
 
+  const handleUpdateStatus = async (id: string, newStatus: 'approved' | 'rejected' | 'pending') => {
+    const actionText = newStatus === 'approved' ? 'aprovar' : newStatus === 'rejected' ? 'rejeitar' : 'resetar'
+    if (!confirm(`Tem certeza que deseja ${actionText} esta compra?`)) return
+
+    try {
+        const response = await fetch(`/api/purchases/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_status: newStatus })
+        })
+
+        if (!response.ok) throw new Error('Failed to update')
+
+        toast({
+            title: 'Sucesso',
+            description: `Status atualizado para ${newStatus}`,
+        })
+
+        // Atualiza a lista localmente
+        setPurchases(purchases.map(p => 
+            p.id === id ? { ...p, payment_status: newStatus } : p
+        ))
+    } catch (error) {
+        toast({
+            title: 'Erro',
+            description: 'Falha ao atualizar status',
+            variant: 'destructive',
+        })
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja deletar esta compra?')) return
 
@@ -78,7 +118,10 @@ export default function PurchaseTracking() {
         method: 'DELETE',
       })
 
-      if (!response.ok) throw new Error('Failed to delete purchase')
+      if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.message || 'Failed to delete purchase')
+      }
 
       toast({
         title: 'Sucesso',
@@ -89,7 +132,7 @@ export default function PurchaseTracking() {
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao deletar compra',
+        description: error instanceof Error ? error.message : 'Erro ao deletar compra',
         variant: 'destructive',
       })
     }
@@ -111,7 +154,7 @@ export default function PurchaseTracking() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead> {/* Nova Coluna */}
+                <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -146,17 +189,60 @@ export default function PurchaseTracking() {
                     {formatDate(purchase.created_at)}
                   </TableCell>
                   <TableCell>
-                    {purchase.payment_status === 'pending' && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(purchase.id)}
-                        className="gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Deletar
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {/* Ações para Pendente: Aprovar ou Rejeitar */}
+                        {purchase.payment_status === 'pending' && (
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleUpdateStatus(purchase.id, 'approved')}
+                                    title="Aprovar Pagamento Manualmente"
+                                    className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                    <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleUpdateStatus(purchase.id, 'rejected')}
+                                    title="Rejeitar Pagamento"
+                                    className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                >
+                                    <XCircle className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
+
+                        {/* Ações para Rejeitado: Tentar Aprovar ou Resetar */}
+                        {purchase.payment_status === 'rejected' && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleUpdateStatus(purchase.id, 'pending')}
+                                title="Voltar para Pendente"
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                            </Button>
+                        )}
+                        
+                        {/* Ação de Delete (Disponível se não for Aprovado) */}
+                        {purchase.payment_status !== 'approved' && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDelete(purchase.id)}
+                                title="Deletar Registro"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                        
+                        {/* Se estiver aprovado, não mostra botões de ação para evitar acidentes, 
+                            mas se quiser adicionar "Estornar" seria aqui. */}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

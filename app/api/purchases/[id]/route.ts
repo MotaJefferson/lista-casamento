@@ -52,6 +52,61 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient()
+    const { id } = await params
+    const purchaseId = id
+    
+    const body = await request.json().catch(() => ({}))
+    const { payment_status } = body
+
+    if (!payment_status || !['approved', 'pending', 'rejected'].includes(payment_status)) {
+      return Response.json(
+        { message: 'Status inválido fornecido' },
+        { status: 400 }
+      )
+    }
+
+    console.log(`[v0] Atualizando manualmente compra ${purchaseId} para ${payment_status}`)
+
+    const { error: updateError } = await supabase
+        .from('purchases')
+        .update({
+            payment_status: payment_status,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', purchaseId)
+
+    if (updateError) {
+        console.error('Error updating purchase:', updateError)
+        return Response.json({ message: 'Erro ao atualizar banco de dados' }, { status: 500 })
+    }
+
+    // Se aprovado, tentar disparar o email de confirmação
+    if (payment_status === 'approved') {
+        const appUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
+        fetch(`${appUrl}/api/email/send-purchase-confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ purchaseId }),
+        }).catch(err => console.error('Failed to trigger email:', err))
+    }
+
+    return Response.json({ success: true, payment_status })
+
+  } catch (error) {
+    console.error('[v0] PATCH purchase error:', error)
+    return Response.json(
+      { message: 'Erro interno no servidor' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -77,9 +132,10 @@ export async function DELETE(
       )
     }
 
-    if (purchase.payment_status !== 'pending') {
+    // Permite deletar se for pending ou rejected. Approved não deveria ser deletado para histórico.
+    if (purchase.payment_status === 'approved') {
       return Response.json(
-        { message: 'Only pending purchases can be deleted' },
+        { message: 'Compras aprovadas não podem ser excluídas' },
         { status: 400 }
       )
     }
